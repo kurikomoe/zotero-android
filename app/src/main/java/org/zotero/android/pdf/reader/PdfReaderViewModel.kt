@@ -510,6 +510,27 @@ class PdfReaderViewModel @Inject constructor(
         pdfUiFragment.setUserInterfaceVisible(isVisible, true)
     }
 
+    private var toolBeforeStylusButton: AnnotationTool? = null;
+    data class StylusShortcutEvent(val isPressed: Boolean)
+
+    // 在 PdfReaderViewModel 中
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onStylusShortcutEvent(event: StylusShortcutEvent) {
+        if (event.isPressed) {
+            val currentTool = pdfFragment.activeAnnotationTool
+            if (currentTool != AnnotationTool.ERASER) {
+                toolBeforeStylusButton = currentTool
+                toggle(AnnotationTool.ERASER)
+                Timber.d("Stylus: Bluetooth Key -> Switch to ERASER")
+            } else {
+                // 切回逻辑
+                toolBeforeStylusButton?.let { toggle(it) } ?: toggle(AnnotationTool.HIGHLIGHT)
+                toolBeforeStylusButton = null
+                Timber.d("Stylus: Bluetooth Key -> Restore Tool")
+            }
+        }
+    }
+
     private fun addDocumentListenerOnInit() {
         this@PdfReaderViewModel.pdfFragment.addDocumentListener(object :
             DocumentListener {
@@ -517,6 +538,10 @@ class PdfReaderViewModel @Inject constructor(
                 progressHandler.muteProgressToolbarForScreen()
                 viewModelScope.launch {
                     this@PdfReaderViewModel.onDocumentLoaded(document)
+                }
+                if (!viewState.showCreationToolbar) {
+                    toggleToolbarButton()
+                    toggle(AnnotationTool.INK)
                 }
             }
 
@@ -1025,6 +1050,16 @@ class PdfReaderViewModel @Inject constructor(
             }
 
             override fun onAnnotationUpdated(annotation: Annotation) {
+                if (pdfFragment.activeAnnotationTool == AnnotationTool.ERASER && annotation is InkAnnotation) {
+                    // 使用 post 确保在当前渲染周期结束后执行删除，防止并发冲突
+                    handler.post {
+                        this@PdfReaderViewModel.document.annotationProvider.removeAnnotationFromPage(annotation)
+                        Timber.d("Stylus: Stroke Eraser Sim - Removed entire ink stroke")
+                    }
+                    // 既然已经删除了整条线，就不需要走后面的 processAnnotationObserving 逻辑同步改动了
+                    return
+                }
+
                 processAnnotationObserving(
                     annotation = annotation,
                     changes = emptyList(),
@@ -2559,6 +2594,11 @@ class PdfReaderViewModel @Inject constructor(
                         )
                         queuedUpPdfReaderColorPickerResult = null
                     }
+
+                    if (!viewState.showCreationToolbar) {
+                        toggleToolbarButton()
+                        toggle(AnnotationTool.INK)
+                    }
                 }
             }
 
@@ -2595,7 +2635,6 @@ class PdfReaderViewModel @Inject constructor(
             override fun onExitAnnotationCreationMode(p0: AnnotationCreationController) {
                 set(false)
             }
-
         })
     }
 

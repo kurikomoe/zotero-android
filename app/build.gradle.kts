@@ -44,7 +44,9 @@ android {
         manifestPlaceholders["enableCrashReporting"] = false
 
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+//            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            abiFilters.clear()
+            abiFilters.add("arm64-v8a")
         }
     }
     signingConfigs {
@@ -58,6 +60,12 @@ android {
                 keyAlias = secrets[0]
                 storePassword = secrets[1]
                 keyPassword = secrets[2]
+            } else {
+                storeFile = rootProject.file("debug.keystore")
+                keyAlias = "androiddebugkey"
+                storePassword = "android"
+                keyPassword = "android"
+                logger.warn("Using debug keystore for release variant because secrets are missing.")
             }
         }
     }
@@ -71,8 +79,13 @@ android {
 
     buildTypes {
         getByName("debug") {
-            isDebuggable = true
-            isMinifyEnabled = false
+//            isDebuggable = true
+//            isMinifyEnabled = false
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+
             signingConfigs
                 .findByName("debug")
                 ?.storeFile = rootProject.file("debug.keystore")
@@ -83,11 +96,11 @@ android {
 
             //Prevent variables from being 'optimized out' during debug,
             //so it becomes possible to see their values in debugger
-            tasks.withType<KotlinJvmCompile>().configureEach {
-                compilerOptions {
-                    freeCompilerArgs.addAll(listOf("-Xdebug"))
-                }
-            }
+//            tasks.withType<KotlinJvmCompile>().configureEach {
+//                compilerOptions {
+//                    freeCompilerArgs.addAll(listOf("-Xdebug"))
+//                }
+//            }
 
         }
         getByName("release") {
@@ -139,10 +152,12 @@ android {
 play {
     track.set("internal")
     defaultToAppBundles.set(true)
-    resolutionStrategy.set(ResolutionStrategy.AUTO)
+//    resolutionStrategy.set(ResolutionStrategy.AUTO)
+    resolutionStrategy.set(ResolutionStrategy.IGNORE)
 }
 
 dependencies {
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 
     //Material design
     implementation(Libs.materialDesign)

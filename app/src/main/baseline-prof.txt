@@ -1,0 +1,4 @@
+Lorg/zotero/android/pdf/reader/PdfReaderViewModel;
+Lorg/zotero/android/pdf/reader/PdfReaderViewModel$onStylusShortcutEvent*;
+Lcom/pspdfkit/**;
+Lorg/zotero/android/screens/dashboard/DashboardActivity;

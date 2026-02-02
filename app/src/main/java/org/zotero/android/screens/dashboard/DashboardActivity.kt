@@ -7,6 +7,7 @@ import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -39,6 +40,7 @@ import org.zotero.android.architecture.navigation.toolbar.SyncToolbarScreen
 import org.zotero.android.architecture.ui.CustomLayoutSize
 import org.zotero.android.files.FileStore
 import org.zotero.android.ktx.enableEdgeToEdgeAndTranslucency
+import org.zotero.android.pdf.reader.PdfReaderViewModel
 import org.zotero.android.uicomponents.themem3.AppThemeM3
 import timber.log.Timber
 import java.io.File
@@ -239,6 +241,24 @@ internal class DashboardActivity : BaseActivity() {
             return Intent(context, DashboardActivity::class.java).apply {
             }
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_PAGE_DOWN) {
+            if (event?.repeatCount == 0) {
+                EventBus.getDefault().post(PdfReaderViewModel.StylusShortcutEvent(isPressed = true))
+            }
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_PAGE_DOWN) {
+            EventBus.getDefault().post(PdfReaderViewModel.StylusShortcutEvent(isPressed = false))
+            return true
+        }
+        return super.onKeyUp(keyCode, event)
     }
 }
 
