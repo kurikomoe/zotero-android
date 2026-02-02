@@ -105,7 +105,8 @@ open class ZoteroApplication: Application(), DefaultLifecycleObserver {
             }
         }
         val listOfTrees = mutableListOf(consoleDebugTree, debugLoggingTree)
-        if (EVENT_AND_CRASH_LOGGING_ENABLED) {
+        val isFirebaseAllowed = EVENT_AND_CRASH_LOGGING_ENABLED && !BuildConfig.FORCE_DISABLE_FIREBASE
+        if (isFirebaseAllowed) {
             val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
                 crashFileWriter.writeCrashToFile(throwable.stackTraceToString())
@@ -117,5 +118,6 @@ open class ZoteroApplication: Application(), DefaultLifecycleObserver {
             listOfTrees.add(FirebaseCrashReportingTree())
         }
         Timber.plant(*listOfTrees.toTypedArray())
+        Timber.d("KurikoMod initialized")
     }
 }

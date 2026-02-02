@@ -126,6 +126,7 @@ android {
         create("KurikoMod") {
             resValue("string", "app_name", """"Zotero KMod""")
             buildConfigField("String", "PSPDFKIT_KEY", readPspdfkitKey())
+            buildConfigField("boolean", "FORCE_DISABLE_FIREBASE", "true")
             applicationIdSuffix = ".kmod"
 
             ndk {
