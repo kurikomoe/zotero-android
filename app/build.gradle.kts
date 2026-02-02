@@ -123,6 +123,16 @@ android {
             resValue("string", "app_name", """"Zotero""")
             buildConfigField("String", "PSPDFKIT_KEY", readPspdfkitKey())
         }
+        create("KurikoMod") {
+            resValue("string", "app_name", """"Zotero KMod""")
+            buildConfigField("String", "PSPDFKIT_KEY", readPspdfkitKey())
+            applicationIdSuffix = ".kmod"
+
+            ndk {
+                abiFilters.clear()
+                abiFilters.add("arm64-v8a")
+            }
+        }
     }
 
     compileOptions {
@@ -208,4 +218,11 @@ fun readPspdfkitKey() : String {
     val keys: List<String> = file
         .readLines()
     return "\"${keys[0]}\""
+}
+
+tasks.whenTaskAdded {
+    if (name.contains("processKurikoModDebugGoogleServices") ||
+        name.contains("processKurikoModReleaseGoogleServices")) {
+        enabled = false
+    }
 }
