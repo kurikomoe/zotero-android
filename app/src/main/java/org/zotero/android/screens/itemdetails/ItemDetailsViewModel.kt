@@ -81,6 +81,7 @@ import org.zotero.android.screens.addnote.data.AddOrEditNoteArgs
 import org.zotero.android.screens.addnote.data.SaveNoteAction
 import org.zotero.android.screens.collections.data.LibrariesAndCollectionsBackButtonActiveEvent
 import org.zotero.android.screens.creatoredit.data.CreatorEditArgs
+import org.zotero.android.screens.htmlepub.reader.data.HtmlEpubReaderArgs
 import org.zotero.android.screens.itemdetails.ItemDetailsViewEffect.NavigateToPdfScreen
 import org.zotero.android.screens.itemdetails.ItemDetailsViewEffect.OnBack
 import org.zotero.android.screens.itemdetails.ItemDetailsViewEffect.OpenFile
@@ -1677,6 +1678,19 @@ class ItemDetailsViewModel @Inject constructor(
                         val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
                         triggerEffect(ItemDetailsViewEffect.ShowZoteroWebView(encodedUrl))
                     }
+//                    "text/html", "application/epub+zip" -> {
+//                        Timber.i("ItemDetailsViewModel: show HTML / EPUB ${attachment.key}")
+//                        showHtmlEpub(
+//                            file = file,
+//                            parentKey = parentKey,
+//                            attachment = attachment
+//                        )
+//                    }
+//                    "text/plain" -> {
+//                        val url = file.toUri().toString()
+//                        val encodedUrl = URLEncoder.encode(url, StandardCharsets.UTF_8.toString())
+//                        triggerEffect(ItemDetailsViewEffect.ShowZoteroWebView(encodedUrl))
+//                    }
                     else -> {
                         if (contentType.contains("image")) {
                             showImageFile(file)
@@ -1702,17 +1716,16 @@ class ItemDetailsViewModel @Inject constructor(
     }
 
     private fun showPdf(file: File, parentKey: String?, attachment: Attachment) {
-        val uri = file.toUri()
         val pdfReaderArgs = PdfReaderArgs(
             key = attachment.key,
             parentKey = parentKey,
             library = viewState.library!!,
             page = null,
             preselectedAnnotationKey = null,
-            uri = uri,
         )
         val params = navigationParamsMarshaller.encodeObjectToBase64(pdfReaderArgs, StandardCharsets.UTF_8)
-        triggerEffect(NavigateToPdfScreen(params))
+        val encodedFilePath = Uri.encode(file.absolutePath)
+        triggerEffect(NavigateToPdfScreen(params, encodedFilePath))
     }
 
     private fun openFile(file: File, mime: String) {
@@ -2085,6 +2098,17 @@ class ItemDetailsViewModel @Inject constructor(
             }
         }
     }
+    private fun showHtmlEpub(file: File, parentKey: String?, attachment: Attachment) {
+        val uri = Uri.fromFile(file)
+        val htmlEpubReaderArgs = HtmlEpubReaderArgs(
+            key = attachment.key,
+            parentKey = parentKey,
+            library = viewState.library!!,
+            uri = uri,
+        )
+        val params = navigationParamsMarshaller.encodeObjectToBase64(htmlEpubReaderArgs)
+        triggerEffect(ItemDetailsViewEffect.NavigateToHtmlEpubReaderScreen(params))
+    }
 }
 
 data class ItemDetailsViewState(
@@ -2121,7 +2145,8 @@ sealed class ItemDetailsViewEffect : ViewEffect {
     object ShowVideoPlayer : ItemDetailsViewEffect()
     object ShowImageViewer : ItemDetailsViewEffect()
     data class OpenFile(val file: File, val mimeType: String) : ItemDetailsViewEffect()
-    data class NavigateToPdfScreen(val params: String) : ItemDetailsViewEffect()
+    data class NavigateToPdfScreen(val params: String, val encodedFilePath: String) : ItemDetailsViewEffect()
+    data class NavigateToHtmlEpubReaderScreen(val params: String) : ItemDetailsViewEffect()
     data class OpenWebpage(val url: String) : ItemDetailsViewEffect()
     data class ShowZoteroWebView(val url: String) : ItemDetailsViewEffect()
     object AddAttachment : ItemDetailsViewEffect()

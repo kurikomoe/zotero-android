@@ -21,6 +21,7 @@ import org.zotero.android.database.DbWrapperBundle
 import org.zotero.android.database.DbWrapperMain
 import org.zotero.android.files.FileStore
 import org.zotero.android.helpers.FileHelper
+import org.zotero.android.htmlepub.HtmlEpubReaderLoader
 import org.zotero.android.locales.CslLocalesLoader
 import org.zotero.android.locales.ExportCslLocaleReader
 import org.zotero.android.pdfworker.loader.PdfWorkerLoader
@@ -61,6 +62,7 @@ class Controllers @Inject constructor(
     private val cslLocalesLoader: CslLocalesLoader,
     private val defaults: Defaults,
     private val exportCslLocaleReader: ExportCslLocaleReader,
+    private val htmlEpubReaderLoader: HtmlEpubReaderLoader,
     ) {
     private var sessionCancellable: Job? = null
     private var apiKey: String? = null
@@ -97,6 +99,7 @@ class Controllers @Inject constructor(
                 citationProcLoader.updateCitationProcIfNeeded()
                 utilitiesLoader.updateUtilitiesIfNeeded()
                 cslLocalesLoader.updateCslLocalesIfNeeded()
+                htmlEpubReaderLoader.updateHtmlEpubReaderIfNeeded()
                 setupExportDefaults()
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update Translator or translation items")
@@ -159,7 +162,7 @@ class Controllers @Inject constructor(
 
     private fun set(data: SessionData, isLogin: Boolean) {
         try {
-            userControllers.init(userId = data.userId)
+            userControllers.init(userId = data.userId, sessionId = data.sessionId)
             if (isLogin) {
                 userControllers.enableSync(apiKey = data.apiToken)
             }
@@ -205,7 +208,6 @@ class Controllers @Inject constructor(
         if (!this.didInitialize) {
             return
         }
-        userControllers.maybeReconnectWebsockets()
 //        startApp()
     }
 
